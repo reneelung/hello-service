@@ -1,0 +1,53 @@
+#!/usr/bin/env node
+var express = require('express');
+var mysql = require('promise-mysql');
+var program = require('commander');
+var testData = require('./test-data');
+var app = require('./service');
+var connection;
+
+program
+  .option("-n, --numberOfEvents <n>", "How many test events should be populated in DB", parseInt)
+  .option("-a, --appStart", "Whether the app should be started after DB bootstrap");
+
+program.parse(process.argv);
+
+bootstrapDb(program);
+
+function bootstrapDb(program) {
+	var dropDb = "DROP DATABASE IF EXISTS hello_service;";
+	var createDb = "CREATE DATABASE hello_service;";
+	var selectDb = "USE hello_service;";
+	var createTable = "CREATE TABLE `events` (`id` int(11) NOT NULL AUTO_INCREMENT, `incident_key` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL, `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `type` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL, PRIMARY KEY (`id`), KEY `index_events_on_incident_key_and_event_type` (`incident_key`, `type`));"
+	var program = program;
+
+	mysql.createConnection({
+	  socketPath: '/tmp/mysql.sock',
+	  host     : 'localhost',
+	  user     : 'root',
+	  password : '-password-'
+	}).then(function(conn) {
+		connection = conn;	
+		return connection.query(dropDb);	
+	}).then(function(rows) {
+		console.log("Dropped database `hello_service`...");	
+		return connection.query(createDb);	
+	}).then(function(rows) {
+		console.log("Created database `hello_service`...");
+		return connection.query(selectDb);	
+	}).then(function(rows) {
+		console.log("Selected database `hello_service`...");
+		return connection.query(createTable)
+	}).then(function(rows) {
+		console.error("Created table `events`");
+		connection.end();
+ 	}).then(function() {
+ 		if (program.numberOfEvents > 0) {
+ 			testData.generateEvents(program.numberOfEvents).then(function() {
+				if (program.appStart) {
+ 					app.start();
+ 				}
+ 			});
+ 		} 		
+ 	});
+}
