@@ -4,6 +4,7 @@ var mysql = require('promise-mysql');
 var program = require('commander');
 var testData = require('./test-data');
 var app = require('./service');
+var config = require('./config');
 var connection;
 
 program
@@ -22,10 +23,11 @@ function bootstrapDb(program) {
 	var program = program;
 
 	mysql.createConnection({
-	  socketPath: '/tmp/mysql.sock',
-	  host     : 'localhost',
-	  user     : 'root',
-	  password : '-password-'
+	  socketPath: config.dbSocketPath,
+	  host     : config.dbHost,
+	  user     : config.dbUser,
+	  password : config.dbPassword,
+	  database : config.dbName
 	}).then(function(conn) {
 		connection = conn;	
 		return connection.query(dropDb);	
@@ -44,6 +46,7 @@ function bootstrapDb(program) {
  	}).then(function() {
  		if (program.numberOfEvents > 0) {
  			testData.generateEvents(program.numberOfEvents).then(function() {
+ 				connection.end();
 				if (program.appStart) {
  					app.start();
  				}

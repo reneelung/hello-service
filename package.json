@@ -1,5 +1,5 @@
 {
-  "name": "hello-server",
+  "name": "hello-service",
   "version": "0.0.1",
   "dependencies": {
     "commander": "^2.9.0",
