@@ -46,7 +46,6 @@ function bootstrapDb(program) {
  	}).then(function() {
  		if (program.numberOfEvents > 0) {
  			testData.generateEvents(program.numberOfEvents).then(function() {
- 				connection.end();
 				if (program.appStart) {
  					app.start();
  				}
